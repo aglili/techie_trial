@@ -5,6 +5,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
+from django.db.models import Q
 from .models import Blog
 
 # Create your views here.
@@ -33,6 +34,12 @@ def getUserBlog(request):
             return Response({"error": "Invalid Login Credentials"}) 
         print(request.data)
         blogs = Blog.objects.filter(author = request.user)
+        ## Implement the ability to search through posts
+
+        if request.GET.get('query'):
+            query = request.GET.get('query')
+            blogs = blogs.filter(Q(title__icontains=query) | Q(content__icontains=query))
+
         serializer = BlogSerializer(blogs, many=True)
         return Response({'data': serializer.data, 'message': "Posts fetched successfully"})
     except Exception as e:
