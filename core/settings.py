@@ -143,3 +143,9 @@ APPEND_SLASH=False
 
 
 
+SWAGGER_SETTINGS = {
+    'DEFAULT_INFO': '',
+}
+
+
+
