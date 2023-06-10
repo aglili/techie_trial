@@ -7,6 +7,7 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from django.db.models import Q
 from .models import Blog
+from django.core.paginator import Paginator
 
 # Create your views here.
 
@@ -45,6 +46,77 @@ def getUserBlog(request):
     except Exception as e:
         return Response(str(e), status=status.HTTP_401_UNAUTHORIZED)
     
+@api_view(['PATCH'])
+def updateUserBlog(request):
+    try:
+        data = request.data
+       
+        blog = Blog.objects.filter(user_id=data.get('user_id'))
 
-## 44.19
+
+        if not blog.exists():
+            return Response({'message':'Blog Does Not Exist'},status=status.HTTP_404_NOT_FOUND)
+
+
+        if request.user != blog[0].author:
+            return Response({'message':'Unauthorized Access!!'},status=status.HTTP_401_UNAUTHORIZED)
+        
+        serializer= BlogSerializer(blog[0],data=data,partial=True)
+
+        if not serializer.is_valid():
+            return Response(serializer.error_messages,status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_401_UNAUTHORIZED)
+    
+
+
+@api_view(["DELETE"])
+def deleteBlog(request):
+    try: 
+        data = request.data
+
+        blog = Blog.objects.filter(user_id=data.get('user_id'))
+
+        
+        if not blog.exists():
+            return Response({'message':'Blog Does Not Exist'},status=status.HTTP_404_NOT_FOUND)
+        
+        if request.user != blog[0].author:
+            return Response({'message':'Unauthorized Access!!'},status=status.HTTP_401_UNAUTHORIZED)
+        
+
+        blog[0].delete()
+        return Response({"data":{},"message":"Blog Deleted"},status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# allow non-registered users read the blog
+@api_view(["GET"])
+def publicBlog(request):
+        try:
+            blogs = Blog.objects.all().order_by("?")
+            ## Implement the ability to search through posts
+
+            if request.GET.get('query'):
+                query = request.GET.get('query')
+                blogs = blogs.filter(Q(title__icontains=query) | Q(content__icontains=query))
+
+        
+            #add pagination
+            page_number =request.GET.get('page',1)
+            paginator  = Paginator(blogs,1)
+
+            serializer = BlogSerializer(paginator.page(page_number),many=True)
+            return Response({'data': serializer.data, 'message': "Posts fetched successfully"})
+        except Exception as e:
+            print(e)
+            return Response({"message":"Wrong or Invalid Page"}, status=status.HTTP_401_UNAUTHORIZED)
+        
 
