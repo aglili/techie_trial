@@ -4,7 +4,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth.models import User
 from django.db.models import Q
 from .models import Blog
 from django.core.paginator import Paginator
@@ -26,14 +25,14 @@ def createBlog(request):
 
     except Exception as e:
         return Response(str(e), status=status.HTTP_401_UNAUTHORIZED)
-    
+    #
 
 @api_view(["GET"])
 def getUserBlog(request):
     try:
         if not request.user.is_authenticated:
             return Response({"error": "Invalid Login Credentials"}) 
-        print(request.data)
+        #(request.data)
         blogs = Blog.objects.filter(author = request.user)
         ## Implement the ability to search through posts
 
@@ -64,7 +63,7 @@ def updateUserBlog(request):
         serializer= BlogSerializer(blog[0],data=data,partial=True)
 
         if not serializer.is_valid():
-            return Response(serializer.error_messages,status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
         
         serializer.save()
         return Response(serializer.data,status=status.HTTP_200_OK)
